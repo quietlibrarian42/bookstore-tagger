@@ -52,7 +52,8 @@ export default function Home() {
       body:    JSON.stringify({ isbns }),
     })
     const data = await res.json()
-    setAddMsg(`Added ${data.added} book${data.added === 1 ? '' : 's'} — ready to tag`)
+const count = data.added ?? data.books?.length ?? isbns.length
+setAddMsg(`Added ${count} book${count === 1 ? '' : 's'} — ready to tag`)
     setIsbnInput('')
     setAdding(false)
     fetchBooks()
