@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
   const results = []
   const errors  = []
 
-  for (const book of books) {
+for (const book of books) {
     try {
       // 1. Fetch metadata from Google Books
       const meta = await fetchMetadata(book.isbn_13)
@@ -99,23 +99,32 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      // 2. Generate tags via Claude
-      const tags = await generateTags(book.isbn_13, meta)
-
-// 3a. Write basic metadata from Google Books immediately
+      // 2. Write basic metadata immediately
       await supabase
         .from('books')
         .update({
-          title:                book.title || meta.title,
-          author:               meta.authors?.[0] || null,
-          publisher:            meta.publisher || null,
-          publish_date:         meta.publishedDate || null,
-          pages:                meta.pageCount || null,
-          raw_metadata:         meta,
+          title:        meta.title || null,
+          author:       meta.authors?.[0] || null,
+          publisher:    meta.publisher || null,
+          publish_date: meta.publishedDate || null,
+          pages:        meta.pageCount || null,
+          raw_metadata: meta,
         })
         .eq('isbn_13', book.isbn_13)
 
-      // 3b. Write Claude tags on top
+      // 3. Generate tags via Claude
+      let tags = null
+      try {
+        tags = await generateTags(book.isbn_13, meta)
+      } catch (claudeError: unknown) {
+        const msg = claudeError instanceof Error ? claudeError.message : JSON.stringify(claudeError)
+        console.error(`Claude error for ${book.isbn_13}:`, msg)
+        errors.push({ isbn: book.isbn_13, error: `Claude failed: ${msg}` })
+        results.push({ isbn: book.isbn_13, title: meta.title })
+        continue
+      }
+
+      // 4. Write Claude tags
       const { error: updateError } = await supabase
         .from('books')
         .update({
@@ -131,7 +140,6 @@ export async function POST(req: NextRequest) {
         results.push({ isbn: book.isbn_13, title: tags.title })
       }
 
-      // Small delay to avoid rate limits
       await new Promise(r => setTimeout(r, 500))
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : JSON.stringify(e)
