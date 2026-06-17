@@ -7,36 +7,35 @@ const supabase = createClient(
 )
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const search = searchParams.get('search') || ''
-  const genre  = searchParams.get('genre')  || ''
-  const age    = searchParams.get('age')    || ''
+  try {
+    const { searchParams } = new URL(req.url)
+    const search = searchParams.get('search') || ''
+    const genre  = searchParams.get('genre')  || ''
+    const age    = searchParams.get('age')    || ''
 
-  let query = supabase.from('books').select('*').order('created_at', { ascending: false })
+    let query = supabase.from('books').select('*').order('created_at', { ascending: false })
 
-  if (search) query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%,isbn_13.ilike.%${search}%`)
-  if (age)    query = query.eq('age_suitability', age)
+    if (search) query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%,isbn_13.ilike.%${search}%`)
+    if (age)    query = query.eq('age_suitability', age)
 
-  const { data, error } = await query
+    const { data, error } = await query
 
-   
     if (error) {
       console.error('Supabase GET error:', JSON.stringify(error))
       return NextResponse.json({ error: error.message, details: error }, { status: 500 })
     }
 
+    const filtered = genre && data
+      ? data.filter((b: {tag_genre?: string[]}) => b.tag_genre?.includes(genre))
+      : data
 
- // Filter by genre client-side to avoid array query issues
-  const filtered = genre && data
-    ? data.filter((b: {tag_genre?: string[]}) => b.tag_genre?.includes(genre))
-    : data
-
-  return NextResponse.json(filtered ?? [])
-} catch (e) {
-console.error('GET crash:', e)
+    return NextResponse.json(filtered ?? [])
+  } catch (e) {
+    console.error('GET crash:', e)
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
+
 export async function POST(req: NextRequest) {
   try {
     const body  = await req.json()
