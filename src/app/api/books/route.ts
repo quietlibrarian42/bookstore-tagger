@@ -45,16 +45,16 @@ export async function POST(req: NextRequest) {
       .select('isbn_13')
       .in('isbn_13', isbns)
 
-    const existingIsbns = new Set(existing?.map(b => b.isbn_13) || [])
+    const existingIsbns = new Set(existing?.map((b: {isbn_13: string}) => b.isbn_13) || [])
     const newIsbns      = isbns.filter(isbn => !existingIsbns.has(isbn))
     const duplicates    = isbns.filter(isbn => existingIsbns.has(isbn))
 
     let added = 0
-    let books = []
+    let books: unknown[] = []
 
     if (newIsbns.length) {
       const rows = newIsbns.map(isbn => ({ isbn_13: isbn, needs_tagging: true }))
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('books')
         .insert(rows)
         .select()
@@ -69,4 +69,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
- 
