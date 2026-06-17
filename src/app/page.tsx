@@ -53,7 +53,13 @@ export default function Home() {
     })
     const data = await res.json()
 const count = data.added ?? data.books?.length ?? isbns.length
-setAddMsg(`Added ${count} book${count === 1 ? '' : 's'} — ready to tag`)
+const count = data.added ?? 0
+    const dupeCount = data.duplicates?.length ?? 0
+    let msg = `Added ${count} book${count === 1 ? '' : 's'} — ready to tag`
+    if (dupeCount > 0) {
+      msg += ` · ${dupeCount} already in inventory: ${data.duplicates.join(', ')}`
+    }
+    setAddMsg(msg)
     setIsbnInput('')
     setAdding(false)
     fetchBooks()

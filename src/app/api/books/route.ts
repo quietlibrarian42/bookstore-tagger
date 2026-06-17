@@ -37,23 +37,36 @@ export async function POST(req: NextRequest) {
     const raw: string[] = Array.isArray(body.isbns) ? body.isbns : [body.isbn]
     const isbns = raw.map(i => i.replace(/[-\s]/g, '')).filter(Boolean)
 
-    if (!isbns.length) return NextResponse.json({ added: 0, books: [] })
+    if (!isbns.length) return NextResponse.json({ added: 0, books: [], duplicates: [] })
 
-    const rows = isbns.map(isbn => ({ isbn_13: isbn, needs_tagging: true }))
-
-    const { data, error } = await supabase
+    // Check which ISBNs already exist
+    const { data: existing } = await supabase
       .from('books')
-      .upsert(rows, { onConflict: 'isbn_13', ignoreDuplicates: false })
-      .select()
+      .select('isbn_13')
+      .in('isbn_13', isbns)
 
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    const existingIsbns = new Set(existing?.map(b => b.isbn_13) || [])
+    const newIsbns      = isbns.filter(isbn => !existingIsbns.has(isbn))
+    const duplicates    = isbns.filter(isbn => existingIsbns.has(isbn))
+
+    let added = 0
+    let books = []
+
+    if (newIsbns.length) {
+      const rows = newIsbns.map(isbn => ({ isbn_13: isbn, needs_tagging: true }))
+      const { data, error } = await supabaseAdmin
+        .from('books')
+        .insert(rows)
+        .select()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      added = data?.length ?? 0
+      books = data ?? []
     }
 
-    return NextResponse.json({ added: data?.length ?? 0, books: data ?? [] })
+    return NextResponse.json({ added, books, duplicates })
   } catch (e) {
     console.error('POST error:', e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
+ 

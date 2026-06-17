@@ -61,9 +61,8 @@ Return ONLY a valid JSON object with these exact fields (no markdown, no explana
   "tag_awards": ["array of awards won or shortlisted for, with year if known"],
   "tag_plot": ["array of plot descriptors e.g. Female lead, Happy ending, Non-linear, Dark themes, Based on true events, Food & cooking, Murder, Friendship, Coming-of-age, Class mobility etc — be generous, include 6-10 descriptors"],
   "tag_author_bg": ["array e.g. Female, Japanese, Contemporary, Debut author"],
-  "content_warnings": ["array e.g. Violence, Sexual content, Death of a child, Abuse, Drug use — or empty array if none"],
-  "age_suitability": "one of: Children (under 8) | Middle grade (8-12) | Young adult (13-17) | Adult (18+) | All ages"
-}`
+"content_warnings": ["Select ONLY from this fixed list, and ONLY if strongly present in the book. Return an empty array for most books. The list: Sexual content, Graphic violence, Death of a child, Child abuse, Sexual abuse, Domestic violence, Suicide, Self-harm, Drug use, Eating disorders, Racism, Animal cruelty. DO NOT invent new warnings. DO NOT include plot elements like betrayal, war, imprisonment, or death of adults. A content warning means a sensitive reader or parent needs to know before picking up the book."],
+"age_suitability": "one of: Children (under 8) | Middle grade (8-12) | Young adult (13-17) | Adult (18+) | All ages. Use Adult (18+) ONLY for books with explicit sexual content, extreme graphic violence, or very heavy themes like addiction or abuse. Classic literary novels, adventure stories, mysteries and general literary fiction should typically be Young adult (13-17) or lower unless explicitly adult in content."}`
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
