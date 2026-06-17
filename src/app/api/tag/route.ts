@@ -8,23 +8,27 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 // Fetch book metadata from Google Books API (free, no key needed for basic use)
 async function fetchMetadata(isbn: string) {
   const clean = isbn.replace(/[-\s]/g, '')
-  const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${clean}`)
-  const data = await res.json()
-  if (!data.items?.length) return null
-  const info = data.items[0].volumeInfo
-  return {
-    title:       info.title,
-    authors:     info.authors,
-    publisher:   info.publisher,
-    publishedDate: info.publishedDate,
-    description: info.description,
-    pageCount:   info.pageCount,
-    categories:  info.categories,
-    language:    info.language,
-    seriesInfo:  info.seriesInfo,
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${clean}`)
+    const data = await res.json()
+    console.log(`Google Books response for ${clean}:`, JSON.stringify(data).slice(0, 200))
+    if (!data.items?.length) return null
+    const info = data.items[0].volumeInfo
+    return {
+      title:         info.title,
+      authors:       info.authors,
+      publisher:     info.publisher,
+      publishedDate: info.publishedDate,
+      description:   info.description,
+      pageCount:     info.pageCount,
+      categories:    info.categories,
+      language:      info.language,
+    }
+  } catch (e) {
+    console.error(`fetchMetadata error for ${clean}:`, e)
+    return null
   }
 }
-
 // Ask Claude to generate structured tags from the metadata
 async function generateTags(isbn: string, meta: Record<string, unknown>) {
   const prompt = `You are a professional librarian and book curator tagging books for an independent bookstore.
@@ -118,7 +122,9 @@ export async function POST(req: NextRequest) {
       // Small delay to avoid rate limits
       await new Promise(r => setTimeout(r, 500))
     } catch (e: unknown) {
-      errors.push({ isbn: book.isbn_13, error: e instanceof Error ? e.message : 'Unknown error' })
+      const msg = e instanceof Error ? e.message : JSON.stringify(e)
+      console.error(`Error tagging ${book.isbn_13}:`, msg)
+      errors.push({ isbn: book.isbn_13, error: msg })
     }
   }
 
