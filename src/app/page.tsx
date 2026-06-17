@@ -52,7 +52,6 @@ export default function Home() {
       body:    JSON.stringify({ isbns }),
     })
     const data = await res.json()
-const count = data.added ?? data.books?.length ?? isbns.length
 const count = data.added ?? 0
     const dupeCount = data.duplicates?.length ?? 0
     let msg = `Added ${count} book${count === 1 ? '' : 's'} — ready to tag`
