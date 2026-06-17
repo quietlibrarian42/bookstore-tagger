@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin as supabase } from '@/lib/supabase'
 import { Book } from '@/lib/types'
 
 // GET /api/search/similar?isbn=xxx — find similar books by tag overlap
