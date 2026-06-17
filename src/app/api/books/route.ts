@@ -1,31 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-// GET /api/books — list all books with optional filters
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const search    = searchParams.get('search')    || ''
-  const genre     = searchParams.get('genre')     || ''
-  const age       = searchParams.get('age')       || ''
-  const series    = searchParams.get('series')    || ''
-  const untagged  = searchParams.get('untagged')  === 'true'
+  const search = searchParams.get('search') || ''
+  const genre  = searchParams.get('genre')  || ''
+  const age    = searchParams.get('age')    || ''
 
   let query = supabase.from('books').select('*').order('created_at', { ascending: false })
 
-  if (search)   query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%,isbn_13.ilike.%${search}%`)
-  if (genre)    query = query.contains('tag_genre', [genre])
-  if (age)      query = query.eq('age_suitability', age)
-  if (series)   query = query.eq('series_name', series)
-  if (untagged) query = query.eq('needs_tagging', true)
+  if (search) query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%,isbn_13.ilike.%${search}%`)
+  if (age)    query = query.eq('age_suitability', age)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  // Filter by genre client-side to avoid array query issues
+  const filtered = genre && data
+    ? data.filter((b: {tag_genre?: string[]}) => b.tag_genre?.includes(genre))
+    : data
+
+  return NextResponse.json(filtered ?? [])
 }
 
-// POST /api/books — add one or many ISBNs
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  const body  = await req.json()
   const isbns: string[] = Array.isArray(body.isbns) ? body.isbns : [body.isbn]
 
   const rows = isbns.map(isbn => ({
