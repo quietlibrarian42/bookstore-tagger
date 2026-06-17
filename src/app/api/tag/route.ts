@@ -9,8 +9,8 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 async function fetchMetadata(isbn: string) {
   const clean = isbn.replace(/[-\s]/g, '')
   try {
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${clean}`)
-    const data = await res.json()
+	const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${clean}&key=${process.env.GOOGLE_BOOKS_API_KEY}`)    
+	const data = await res.json()
     console.log(`Google Books response for ${clean}:`, JSON.stringify(data).slice(0, 200))
     if (!data.items?.length) return null
     const info = data.items[0].volumeInfo
