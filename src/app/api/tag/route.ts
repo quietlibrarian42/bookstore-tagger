@@ -102,12 +102,24 @@ export async function POST(req: NextRequest) {
       // 2. Generate tags via Claude
       const tags = await generateTags(book.isbn_13, meta)
 
-      // 3. Write tags back to Supabase
+// 3a. Write basic metadata from Google Books immediately
+      await supabase
+        .from('books')
+        .update({
+          title:                book.title || meta.title,
+          author:               meta.authors?.[0] || null,
+          publisher:            meta.publisher || null,
+          publish_date:         meta.publishedDate || null,
+          pages:                meta.pageCount || null,
+          raw_metadata:         meta,
+        })
+        .eq('isbn_13', book.isbn_13)
+
+      // 3b. Write Claude tags on top
       const { error: updateError } = await supabase
         .from('books')
         .update({
           ...tags,
-          raw_metadata:  meta,
           needs_tagging: false,
           tagged_at:     new Date().toISOString(),
         })
