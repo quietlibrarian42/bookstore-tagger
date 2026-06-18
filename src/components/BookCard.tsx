@@ -122,7 +122,7 @@ export default function BookCard({ book, onTagged }: { book: Book; onTagged?: ()
                 {book.tag_plot?.length      && <div className="flex flex-wrap gap-1">{book.tag_plot.map(t     => <Badge key={t} text={t} color="bg-orange-50 text-orange-700" />)}</div>}
                 {book.tag_awards?.length    && <div className="flex flex-wrap gap-1">{book.tag_awards.map(t   => <Badge key={t} text={'🏆 ' + t} color="bg-yellow-50 text-yellow-800" />)}</div>}
                 {book.tag_author_bg?.length && <div className="flex flex-wrap gap-1">{book.tag_author_bg.map(t=> <Badge key={t} text={t} color="bg-blue-50 text-blue-700" />)}</div>}
-                {book.content_warnings?.length && (
+                {(book.content_warnings?.length?? 0) > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {book.content_warnings.map(t => <Badge key={t} text={'⚠ ' + t} color="bg-red-50 text-red-700" />)}
                   </div>
