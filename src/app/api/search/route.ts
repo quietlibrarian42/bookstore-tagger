@@ -53,6 +53,13 @@ export async function GET(req: NextRequest) {
     if (source.tag_era && b.tag_era === source.tag_era) {
       score += 1
     }
+    // Same author = 3 points
+    if (source.author && b.author && 
+        source.author.toLowerCase() === b.author.toLowerCase()) {
+      score += 3
+      overlap.push(`Same author: ${source.author}`)
+    }
+
 
     return { ...b, _score: score, _overlap: [...new Set(overlap)] }
   })

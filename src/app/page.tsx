@@ -45,8 +45,13 @@ export default function Home() {
   }, [fetchBooks])
 
   async function addBooks() {
-    const isbns = isbnInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
-    if (!isbns.length) return
+const allIsbns = isbnInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+    const isbns = allIsbns.slice(0, 100)
+    if (allIsbns.length > 100) {
+      setAddMsg(`Note: only the first 100 of ${allIsbns.length} ISBNs will be added`)
+      await new Promise(r => setTimeout(r, 1500))
+    }    
+	if (!isbns.length) return
     setAdding(true)
     setAddMsg(null)
     const res  = await fetch('/api/books', {
@@ -61,7 +66,7 @@ export default function Home() {
     if (dupeCount > 0) {
       msg += ` · ${dupeCount} already in inventory: ${data.duplicates.join(', ')}`
     }
-    setAddMsg(msg)
+    setAddMsg(prev => allIsbns.length > 100 ? `${msg} (${allIsbns.length - 100} skipped)` : msg)
     setIsbnInput('')
     setAdding(false)
     fetchBooks()
